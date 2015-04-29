@@ -1,0 +1,74 @@
+---
+- name: install rbenv from source
+  git: repo={{ rbenv_repo }}
+       dest=/opt/rbenv
+       update={{ rbenv_update }}
+       accept_hostkey=yes
+
+- name: install ruby-build from source
+  git: repo={{ rbenv_build_repo }}
+       dest=/opt/rbenv/plugins/ruby-build
+       update={{ rbenv_update }}
+       accept_hostkey=yes
+
+- name: install ruby deps
+  apt: pkg={{ item }}
+       state=present
+       update_cache=yes
+  with_items:
+    - git
+    - curl
+    - zlib1g-dev
+    - build-essential
+    - libssl-dev
+    - libreadline-dev
+    - libyaml-dev
+    - libsqlite3-dev
+    - sqlite3
+    - libxml2-dev
+    - libxslt1-dev
+    - libcurl4-openssl-dev
+    - python-software-properties
+    - libffi-dev
+
+- name: install shell profile for rbenv
+  copy: src=rbenv-profile.sh
+        dest=/etc/profile.d/50-rbenv.sh
+        owner=root group=root mode=0644
+
+- name: install sudoer for rbenv
+  copy: src=rbenv-sudoers
+        dest="/etc/sudoers.d/50-rbenv"
+        owner=root group=root mode=0644
+
+#
+#
+#
+
+- name: ensure sources directory exists
+  file: path={{ ruby_source_path }}
+        owner=root group=root mode=0755
+        state=directory
+  when: ruby_version is defined
+
+- name: download ruby source
+  get_url: url={{ ruby_source_url }}
+           dest={{ ruby_source_path }}/{{ ruby_source_file }}
+           sha256sum={{ ruby_source_checksum }}
+  when: ruby_version is defined
+
+- name: install ruby
+  script: install-ruby.sh {{ ruby_version }}
+          creates=/opt/rbenv/versions/{{ ruby_version }}
+  environment:
+    RUBY_BUILD_MIRROR_URL: file://{{ ruby_source_path }}/{{ ruby_source_file }}#
+  when: ruby_version is defined
+
+# - name: set default ruby version
+#   template: src=version
+#             dest=/opt/rbenv/version
+#
+# - name: .gemrc for root
+#   copy: src=gemrc
+#         dest=/root/.gemrc
+#         owner=root group=root mode=0644

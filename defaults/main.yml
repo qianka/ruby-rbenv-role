@@ -1,0 +1,6 @@
+---
+rbenv_repo: https://github.com/sstephenson/rbenv.git
+rbenv_build_repo: https://github.com/sstephenson/ruby-build.git
+rbenv_update: yes
+
+ruby_source_path: /opt/sources
